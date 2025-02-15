@@ -1,34 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Redirect } from 'expo-router';
 
 const Index = (): JSX.Element => {
-  return (
-    <View style={styles.container}>
-      <View>
-        <View>
-          <Text>位置情報送信</Text>
-          <Text>ログアウト</Text>
-        </View>
-      </View>
-
-      <View>
-        <View>
-          <View>
-            <Text>送信</Text>
-          </View>
-        </View>
-      </View>
-
-    </View>
-  )
+  return <Redirect href='auth/Login' />
+  //return <Redirect href='content/Main' />
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default Index
