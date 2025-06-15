@@ -1,0 +1,229 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, TouchableOpacity, Text, Alert } from 'react-native';
+import * as Location from 'expo-location'; // expo-locationのみ使用
+import * as SecureStore from 'expo-secure-store';
+import { v4 as uuidv4 } from 'uuid';
+import * as TaskManager from 'expo-task-manager';
+
+import Icon from './Icon';
+
+interface Props {
+  isLocating: boolean;
+}
+
+// Locationデータ型
+interface LocationType {
+  latitude?: number | null;
+  longitude?: number | null;
+  address?: string | null;
+  status?: string | null;
+  elapsedTime?: number | null;
+}
+
+const LOCATION_TASK_NAME = 'background-location-task';
+
+TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
+
+  console.info('data:', data);
+  if (error) {
+    console.error('バックグラウンド位置情報取得エラー:', error);
+    return;
+  }
+  if (data) {
+    // const { locations } = data;
+    // if (locations && locations.length > 0) {
+    //   const location = locations[0];
+    //   console.log('バックグラウンド位置情報:', location);
+
+    //   // 端末IDを取得してAPIに送信
+    //   const mobileId = await getPersistentUniqueId();
+    //   await sendLocationToAPI({
+    //     latitude: location.coords.latitude,
+    //     longitude: location.coords.longitude,
+    //   }, mobileId);
+    // }
+  }
+});
+
+const sendLocationToAPI = async (location: LocationType | null, mobileId: string | null) => {
+  if (!location) {
+    console.log(`APIに送信する位置情報がありません`);
+    return;
+  }
+  try {
+    const response = await fetch(
+      'https://c5mtfa6iy7.execute-api.ap-northeast-1.amazonaws.com/apikey/sample',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'hTbGdrotsa38nC209Ti1a52vcSeHmdHY9I32uIVT'
+        },
+        body: JSON.stringify({
+          address: location.address || '取得中...',
+          latitude: location.latitude,
+          longitude: location.longitude,
+          mobileId: mobileId,
+          timestamp: new Date().toISOString(),
+        }),
+      }
+    );
+
+    console.log(`location.address:`+ location.address);
+
+    if (!response.ok) {
+      throw new Error(`APIエラー: ${response.status}`);
+    }
+
+    console.log('位置情報をAPIに送信しました:', location);
+  } catch (error) {
+    console.error('位置情報の送信に失敗:', error);
+  }
+};
+
+const getPersistentUniqueId = async () => {
+  let uniqueId = await SecureStore.getItemAsync('device-unique-id');
+  
+  if (!uniqueId) {
+    uniqueId = uuidv4(); // 新しいUUIDを生成
+    await SecureStore.setItemAsync('device-unique-id', uniqueId);
+  }
+
+  console.info('uniqueId:', uniqueId);
+  return uniqueId;
+};
+
+const Locate = (props: Props): JSX.Element => {
+  const [isLocating, setIsLocating] = useState(props.isLocating);
+  const [location, setLocation] = useState<LocationType | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [count, setCount] = useState(0);
+  const [exeTime, setExeTime] = useState(0);
+  const timer = useRef<NodeJS.Timeout | null>(null);
+
+  console.log('isLocating:', isLocating);
+
+  const handleLocate = async () => {
+    console.log('handleLocate');
+    setCount(0);
+
+    if (!isLocating) {
+
+      // TODO 計測用
+      console.log('1');
+
+      try {
+        // ON にする
+        await toggleBackgroundLocation(true);
+
+        // 1秒ごとに elapsedTime を増やす
+        timer.current = setInterval(() => {
+          setExeTime((prev) => prev + 1);
+        }, 1000);
+
+      } catch (error: any) {
+        setErrorMsg(error.message);
+        Alert.alert(error.message);
+      }
+    } else {
+      // OFF にする
+      await toggleBackgroundLocation(false);
+
+      // 計測終了時にタイマーをクリア
+      if (timer.current) {
+        clearInterval(timer.current);
+        timer.current = null;
+      }
+    }
+
+    // TODO 計測用
+    console.log('2');
+
+    setIsLocating((prev) => !prev);
+  };
+
+  // 📌 位置情報の ON / OFF を切り替える関数
+  const toggleBackgroundLocation = async (enable: boolean) => {
+    if (enable) {
+      const { status: foreStatus } = await Location.requestForegroundPermissionsAsync();
+      const { status: backStatus } = await Location.requestBackgroundPermissionsAsync();
+      if (foreStatus !== 'granted' || backStatus !== 'granted') {
+        setErrorMsg('位置情報の取得が許可されていません');
+        return;
+      }
+
+      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 5000,
+        distanceInterval: 0.1,
+        foregroundService: {
+          notificationTitle: '位置情報を取得中',
+          notificationBody: 'アプリは位置情報をバックグラウンドで取得しています',
+        },
+      });
+
+      console.log('バックグラウンド位置情報取得を開始しました');
+    } else {
+      const isRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
+      if (isRegistered) {
+        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+        console.log('バックグラウンド位置情報取得を停止しました');
+      }
+    }
+  };
+
+  return (
+    <View>
+      <View style={styles.button}>
+        <TouchableOpacity onPress={handleLocate}>
+          <View>
+            {isLocating ? (
+              <Icon name="stop" color="#D34F45" size={250} />
+            ) : (
+              <Icon name="play" color="#467FD3" size={250} />
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <View>
+        {errorMsg ? (
+          <Text style={styles.errorText}>{errorMsg}</Text>
+        ) : isLocating && location ? (
+          <Text>
+            緯度：{location.latitude ?? '取得中...'} {'\n'}
+            経度：{location.longitude ?? '取得中...'} {'\n'}
+            住所：{location.address || '取得中...'} {'\n'}
+            ステータス：{location.status || '取得中...'} {'\n'}
+            実行後経過時間：{exeTime} {'\n'}
+            実行後取得回数：{count || '取得中...'} {'\n'}
+            間隔：{location.elapsedTime || '取得中...'} {'\n'}
+            最終位置情報取得：{new Date().toLocaleTimeString()}
+          </Text>
+        ) : (
+          <Text>位置情報停止中</Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+    margin: 16,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    margin: 10,
+  },
+});
+
+export default Locate;

@@ -1,4 +1,9 @@
-import { Stack } from 'expo-router'
+import { Stack } from 'expo-router';
+import { Amplify } from 'aws-amplify';
+import config from '../aws-exports';
+
+Amplify.configure(config);
+console.log("Amplify.configure()")
 
 const Layout = (): JSX.Element => {
   return <Stack screenOptions={{
@@ -6,7 +11,7 @@ const Layout = (): JSX.Element => {
       backgroundColor: '#467FD3',
     },
     headerTintColor: '#fff',
-    headerTitle: 'ココロケーション',
+    headerTitle: 'マイローCar',
     headerBackTitle: '戻る',
     headerTitleStyle: {
       fontSize: 22,
@@ -15,4 +20,4 @@ const Layout = (): JSX.Element => {
   }} />
 }
 
-export default Layout
+export default Layout;

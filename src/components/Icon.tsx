@@ -25,4 +25,4 @@ const Icon = (props: Props): JSX.Element | null => {
   )
 }
 
-export default Icon
+export default Icon;

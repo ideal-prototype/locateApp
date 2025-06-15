@@ -8,7 +8,7 @@ interface Props {
   isLocating?: boolean;
 }
 
-const Locate = (props: Props): JSX.Element => {
+const BusSelect = (props: Props): JSX.Element => {
   const [isLocating, setIsLocating] = useState(props.isLocating ?? false);
   const { location, errorMsg, getCount, sendCount, exeTime, sendModel } = UseLocation(isLocating);
 
@@ -165,4 +165,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Locate;
+export default BusSelect;
