@@ -6,7 +6,7 @@
     "defaultAuthType": {
       "mode": "API_KEY",
       "expirationTime": 365,
-      "apiKeyExpirationDate": "2026-03-10T17:39:30.349Z",
+      "apiKeyExpirationDate": "2026-06-15T16:15:58.439Z",
       "keyDescription": "Mobile App API Key"
     },
     "conflictResolution": {},

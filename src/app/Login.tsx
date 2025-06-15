@@ -1,9 +1,6 @@
-import { StyleSheet, View, TextInput, Text } from 'react-native'
-import { router }  from 'expo-router'
-import { useState, useEffect }  from 'react'
-import { API } from '@aws-amplify/api'
-import { graphqlOperation } from '@aws-amplify/api-graphql'
-import { getLogin } from '../graphql/queries'
+import { StyleSheet, View, TextInput, Text } from 'react-native';
+import { router }  from 'expo-router';
+import { useState, useEffect }  from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { getMobileIdForInitialize } from '../components/GetStorage';
@@ -11,18 +8,45 @@ import { getMobileIdForInitialize } from '../components/GetStorage';
 import Button from '../components/Button'
 import Footer from '../components/Footer'
 
+import { API } from '@aws-amplify/api';
+import { graphqlOperation } from '@aws-amplify/api-graphql';
+import { getLogin } from '../graphql/queries';
+
+const query2 = `
+  query TestLogin {
+    getLogin(accountId: "test", password: "test") {
+      accountId
+      customerId
+      apiKey
+      busId
+      url
+    }
+  }
+`
+const API_KEY = 'da2-5yuw3gts4fgmlkyv6visrq3bpe';
+const GRAPHQL_ENDPOINT = 'https://ibrx7gq2prbexgkar3wi2wyrti.appsync-api.ap-northeast-1.amazonaws.com/graphql';
+
 const handleLogin = async (accountId: string, password: string): Promise<void> => {
   console.log('login')
 
   try {
-    const result = await API.graphql(graphqlOperation(getLogin, {
-      accountId: accountId,
-      password: password
-    }));
+    //const result = await API.graphql(graphqlOperation(getLogin, { accountId, password }));
+    const query = graphqlOperation(getLogin, { accountId, password });
+    //const result = API.graphql(result1)
+    const res = await fetch(GRAPHQL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+      },
+      body: JSON.stringify(query),
+    });
+
+    const result = await res.json();
     console.log(result)
     
-    const customer = (result as any).data?.listCustomers?.items[0];
-    console.log(customer)
+    const customer = (result as any).data?.getLogin;
+    console.log('customer:', customer);
 
     if (customer) {
       // セッション情報を AsyncStorage に保存

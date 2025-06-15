@@ -11,12 +11,12 @@
   "dependencies": {
     "@aws-amplify/api": "^5.4.16",
     "@aws-amplify/api-graphql": "^4.7.16",
-    "@aws-amplify/api-rest": "^4.0.69",
-    "@aws-amplify/auth": "^5.1.0",
-    "@aws-amplify/core": "^6.1.0",
-    "@aws-amplify/pubsub": "^6.1.44",
-    "@aws-amplify/react-native": "^1.1.7",
-    "@aws-sdk/client-dynamodb": "^3.749.0",
+    "@aws-amplify/api-rest": "^4.1.5",
+    "@aws-amplify/auth": "^5.6.15",
+    "@aws-amplify/core": "^6.12.0",
+    "@aws-amplify/pubsub": "^6.1.56",
+    "@aws-amplify/react-native": "^1.1.10",
+    "@aws-sdk/client-dynamodb": "^3.828.0",
     "@capacitor/geolocation": "^7.1.1",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "2.1.2",
@@ -47,7 +47,7 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-vector-icons": "^10.2.0",
-    "react-test-renderer": "^19.0.0"
+    "react-test-renderer": "19.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

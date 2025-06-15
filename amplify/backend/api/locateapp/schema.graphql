@@ -16,7 +16,7 @@ type BusLinkMobileConnection {
   nextToken: String
 }
 
-type Customer @key(name: "byAccountIdPassword",fields: ["accountId","password"]) {
+type Customer {
   accountId: String!
   apiKey: String!
   busId: [String!]!

@@ -8,135 +8,6 @@ type GeneratedSubscription<InputType, OutputType> = string & {
   __generatedSubscriptionOutput: OutputType;
 };
 
-export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: ModelSubscriptionUserFilterInput) {
-  onCreateUser(filter: $filter) {
-    id
-    name
-    password
-    description
-    createdAt
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnCreateUserSubscriptionVariables,
-  APITypes.OnCreateUserSubscription
->;
-export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: ModelSubscriptionUserFilterInput) {
-  onUpdateUser(filter: $filter) {
-    id
-    name
-    password
-    description
-    createdAt
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnUpdateUserSubscriptionVariables,
-  APITypes.OnUpdateUserSubscription
->;
-export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: ModelSubscriptionUserFilterInput) {
-  onDeleteUser(filter: $filter) {
-    id
-    name
-    password
-    description
-    createdAt
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnDeleteUserSubscriptionVariables,
-  APITypes.OnDeleteUserSubscription
->;
-export const onCreateCustomer = /* GraphQL */ `subscription OnCreateCustomer(
-  $accountId: String
-  $customerId: String
-  $password: String
-  $apiKey: String
-  $busId: [String!]
-) {
-  onCreateCustomer(
-    accountId: $accountId
-    customerId: $customerId
-    password: $password
-    apiKey: $apiKey
-    busId: $busId
-  ) {
-    accountId
-    customerId
-    password
-    apiKey
-    busId
-    contractUnits
-    url
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnCreateCustomerSubscriptionVariables,
-  APITypes.OnCreateCustomerSubscription
->;
-export const onUpdateCustomer = /* GraphQL */ `subscription OnUpdateCustomer(
-  $accountId: String
-  $customerId: String
-  $password: String
-  $apiKey: String
-  $busId: [String!]
-) {
-  onUpdateCustomer(
-    accountId: $accountId
-    customerId: $customerId
-    password: $password
-    apiKey: $apiKey
-    busId: $busId
-  ) {
-    accountId
-    customerId
-    password
-    apiKey
-    busId
-    contractUnits
-    url
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnUpdateCustomerSubscriptionVariables,
-  APITypes.OnUpdateCustomerSubscription
->;
-export const onDeleteCustomer = /* GraphQL */ `subscription OnDeleteCustomer(
-  $accountId: String
-  $customerId: String
-  $password: String
-  $apiKey: String
-  $busId: [String!]
-) {
-  onDeleteCustomer(
-    accountId: $accountId
-    customerId: $customerId
-    password: $password
-    apiKey: $apiKey
-    busId: $busId
-  ) {
-    accountId
-    customerId
-    password
-    apiKey
-    busId
-    contractUnits
-    url
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnDeleteCustomerSubscriptionVariables,
-  APITypes.OnDeleteCustomerSubscription
->;
 export const onCreateBusLinkMobile = /* GraphQL */ `subscription OnCreateBusLinkMobile(
   $busId: String
   $busName: [String]
@@ -159,6 +30,115 @@ export const onCreateBusLinkMobile = /* GraphQL */ `subscription OnCreateBusLink
 ` as GeneratedSubscription<
   APITypes.OnCreateBusLinkMobileSubscriptionVariables,
   APITypes.OnCreateBusLinkMobileSubscription
+>;
+export const onCreateCustomer = /* GraphQL */ `subscription OnCreateCustomer(
+  $accountId: String
+  $apiKey: String
+  $busId: [String!]
+  $customerId: String
+  $password: String
+) {
+  onCreateCustomer(
+    accountId: $accountId
+    apiKey: $apiKey
+    busId: $busId
+    customerId: $customerId
+    password: $password
+  ) {
+    accountId
+    apiKey
+    busId
+    contractUnits
+    customerId
+    password
+    url
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateCustomerSubscriptionVariables,
+  APITypes.OnCreateCustomerSubscription
+>;
+export const onCreateUser = /* GraphQL */ `subscription OnCreateUser($filter: ModelSubscriptionUserFilterInput) {
+  onCreateUser(filter: $filter) {
+    createdAt
+    description
+    id
+    name
+    password
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateUserSubscriptionVariables,
+  APITypes.OnCreateUserSubscription
+>;
+export const onDeleteBusLinkMobile = /* GraphQL */ `subscription OnDeleteBusLinkMobile(
+  $busId: String
+  $busName: [String]
+  $mobileId: [String]
+  $restriction: Boolean
+) {
+  onDeleteBusLinkMobile(
+    busId: $busId
+    busName: $busName
+    mobileId: $mobileId
+    restriction: $restriction
+  ) {
+    busId
+    busName
+    mobileId
+    restriction
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteBusLinkMobileSubscriptionVariables,
+  APITypes.OnDeleteBusLinkMobileSubscription
+>;
+export const onDeleteCustomer = /* GraphQL */ `subscription OnDeleteCustomer(
+  $accountId: String
+  $apiKey: String
+  $busId: [String!]
+  $customerId: String
+  $password: String
+) {
+  onDeleteCustomer(
+    accountId: $accountId
+    apiKey: $apiKey
+    busId: $busId
+    customerId: $customerId
+    password: $password
+  ) {
+    accountId
+    apiKey
+    busId
+    contractUnits
+    customerId
+    password
+    url
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteCustomerSubscriptionVariables,
+  APITypes.OnDeleteCustomerSubscription
+>;
+export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser($filter: ModelSubscriptionUserFilterInput) {
+  onDeleteUser(filter: $filter) {
+    createdAt
+    description
+    id
+    name
+    password
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteUserSubscriptionVariables,
+  APITypes.OnDeleteUserSubscription
 >;
 export const onUpdateBusLinkMobile = /* GraphQL */ `subscription OnUpdateBusLinkMobile(
   $busId: String
@@ -183,26 +163,46 @@ export const onUpdateBusLinkMobile = /* GraphQL */ `subscription OnUpdateBusLink
   APITypes.OnUpdateBusLinkMobileSubscriptionVariables,
   APITypes.OnUpdateBusLinkMobileSubscription
 >;
-export const onDeleteBusLinkMobile = /* GraphQL */ `subscription OnDeleteBusLinkMobile(
-  $busId: String
-  $busName: [String]
-  $mobileId: [String]
-  $restriction: Boolean
+export const onUpdateCustomer = /* GraphQL */ `subscription OnUpdateCustomer(
+  $accountId: String
+  $apiKey: String
+  $busId: [String!]
+  $customerId: String
+  $password: String
 ) {
-  onDeleteBusLinkMobile(
+  onUpdateCustomer(
+    accountId: $accountId
+    apiKey: $apiKey
     busId: $busId
-    busName: $busName
-    mobileId: $mobileId
-    restriction: $restriction
+    customerId: $customerId
+    password: $password
   ) {
+    accountId
+    apiKey
     busId
-    busName
-    mobileId
-    restriction
+    contractUnits
+    customerId
+    password
+    url
     __typename
   }
 }
 ` as GeneratedSubscription<
-  APITypes.OnDeleteBusLinkMobileSubscriptionVariables,
-  APITypes.OnDeleteBusLinkMobileSubscription
+  APITypes.OnUpdateCustomerSubscriptionVariables,
+  APITypes.OnUpdateCustomerSubscription
+>;
+export const onUpdateUser = /* GraphQL */ `subscription OnUpdateUser($filter: ModelSubscriptionUserFilterInput) {
+  onUpdateUser(filter: $filter) {
+    createdAt
+    description
+    id
+    name
+    password
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateUserSubscriptionVariables,
+  APITypes.OnUpdateUserSubscription
 >;

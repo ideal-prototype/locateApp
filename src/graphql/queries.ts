@@ -8,91 +8,6 @@ type GeneratedQuery<InputType, OutputType> = string & {
   __generatedQueryOutput: OutputType;
 };
 
-export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
-  getUser(id: $id) {
-    id
-    name
-    password
-    description
-    createdAt
-    updatedAt
-    __typename
-  }
-}
-` as GeneratedQuery<APITypes.GetUserQueryVariables, APITypes.GetUserQuery>;
-export const listUsers = /* GraphQL */ `query ListUsers(
-  $filter: ModelUserFilterInput
-  $limit: Int
-  $nextToken: String
-) {
-  listUsers(filter: $filter, limit: $limit, nextToken: $nextToken) {
-    items {
-      id
-      name
-      password
-      description
-      createdAt
-      updatedAt
-      __typename
-    }
-    nextToken
-    __typename
-  }
-}
-` as GeneratedQuery<APITypes.ListUsersQueryVariables, APITypes.ListUsersQuery>;
-export const getCustomer = /* GraphQL */ `query GetCustomer($customerId: String!, $accountId: String!) {
-  getCustomer(customerId: $customerId, accountId: $accountId) {
-    accountId
-    customerId
-    password
-    apiKey
-    busId
-    contractUnits
-    url
-    __typename
-  }
-}
-` as GeneratedQuery<
-  APITypes.GetCustomerQueryVariables,
-  APITypes.GetCustomerQuery
->;
-export const getLogin = /* GraphQL */ `query GetLogin($accountId: String!, $password: String!) {
-  getLogin(accountId: $accountId, password: $password) {
-    accountId
-    customerId
-    password
-    apiKey
-    busId
-    contractUnits
-    url
-    __typename
-  }
-}
-` as GeneratedQuery<APITypes.GetLoginQueryVariables, APITypes.GetLoginQuery>;
-export const listCustomers = /* GraphQL */ `query ListCustomers(
-  $filter: TableCustomerFilterInput
-  $limit: Int
-  $nextToken: String
-) {
-  listCustomers(filter: $filter, limit: $limit, nextToken: $nextToken) {
-    items {
-      accountId
-      customerId
-      password
-      apiKey
-      busId
-      contractUnits
-      url
-      __typename
-    }
-    nextToken
-    __typename
-  }
-}
-` as GeneratedQuery<
-  APITypes.ListCustomersQueryVariables,
-  APITypes.ListCustomersQuery
->;
 export const getBusLinkMobile = /* GraphQL */ `query GetBusLinkMobile($busId: String!) {
   getBusLinkMobile(busId: $busId) {
     busId
@@ -106,6 +21,47 @@ export const getBusLinkMobile = /* GraphQL */ `query GetBusLinkMobile($busId: St
   APITypes.GetBusLinkMobileQueryVariables,
   APITypes.GetBusLinkMobileQuery
 >;
+export const getCustomer = /* GraphQL */ `query GetCustomer($accountId: String!, $customerId: String!) {
+  getCustomer(accountId: $accountId, customerId: $customerId) {
+    accountId
+    apiKey
+    busId
+    contractUnits
+    customerId
+    password
+    url
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetCustomerQueryVariables,
+  APITypes.GetCustomerQuery
+>;
+export const getLogin = /* GraphQL */ `query GetLogin($accountId: String!, $password: String!) {
+  getLogin(accountId: $accountId, password: $password) {
+    accountId
+    apiKey
+    busId
+    contractUnits
+    customerId
+    password
+    url
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.GetLoginQueryVariables, APITypes.GetLoginQuery>;
+export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
+  getUser(id: $id) {
+    createdAt
+    description
+    id
+    name
+    password
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.GetUserQueryVariables, APITypes.GetUserQuery>;
 export const listBusLinkMobiles = /* GraphQL */ `query ListBusLinkMobiles(
   $filter: TableBusLinkMobileFilterInput
   $limit: Int
@@ -127,3 +83,47 @@ export const listBusLinkMobiles = /* GraphQL */ `query ListBusLinkMobiles(
   APITypes.ListBusLinkMobilesQueryVariables,
   APITypes.ListBusLinkMobilesQuery
 >;
+export const listCustomers = /* GraphQL */ `query ListCustomers(
+  $filter: TableCustomerFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listCustomers(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      accountId
+      apiKey
+      busId
+      contractUnits
+      customerId
+      password
+      url
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListCustomersQueryVariables,
+  APITypes.ListCustomersQuery
+>;
+export const listUsers = /* GraphQL */ `query ListUsers(
+  $filter: ModelUserFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listUsers(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      createdAt
+      description
+      id
+      name
+      password
+      updatedAt
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.ListUsersQueryVariables, APITypes.ListUsersQuery>;

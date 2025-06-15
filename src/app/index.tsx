@@ -12,8 +12,8 @@ const Index = (): JSX.Element => {
   //   })
   // }, [])
 
-  //return <Redirect href='/Login' />
-  return <Redirect href='/tabs/TabLocate' />
+  return <Redirect href='/Login' />
+  //return <Redirect href='/tabs/TabLocate' />
 }
 
 export default Index;
