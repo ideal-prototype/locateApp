@@ -32,8 +32,5 @@
         "buildType": "app-bundle"
       }
     }
-  },
-  "hooks": {
-    "post-install": "node ./scripts/fix-podfile.js"
   }
 }
