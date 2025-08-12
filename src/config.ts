@@ -3,7 +3,7 @@ import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage'
 import { Amplify } from 'aws-amplify'
-import config from './aws-exports'
+import config from './aws-exports.js-verificate'
 Amplify.configure(config)
 
 const firebaseConfig = {

@@ -29,8 +29,8 @@ export const sendLocationToAPI = async (location: LocationType) => {
 
   try {
     mobileId ??= await getMobileId();
-    apiUrl ??= await getApiUrl() || '';
-    apiKey ??= await getApiKey() || '';
+    apiUrl = await getApiUrl() || '';
+    apiKey = await getApiKey() || '';
 
     console.log('apiUrl:' + apiUrl + 'apiKey:' + apiKey + 'mobileId:' + mobileId);
 

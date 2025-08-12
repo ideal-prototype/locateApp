@@ -7,7 +7,9 @@
           "additionalAuthenticationProviders": [],
           "defaultAuthentication": {
             "apiKeyConfig": {
-              "apiKeyExpirationDays": 7
+              "apiKeyExpirationDate": "2026-06-15T16:15:58.439Z",
+              "apiKeyExpirationDays": 365,
+              "description": "Mobile App API Key"
             },
             "authenticationType": "API_KEY"
           }
@@ -18,7 +20,7 @@
     }
   },
   "auth": {
-    "locateapp2dd7641c": {
+    "locateapp9eebace0": {
       "customAuth": false,
       "dependsOn": [],
       "frontendAuthConfig": {

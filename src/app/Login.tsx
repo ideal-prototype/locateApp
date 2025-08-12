@@ -11,7 +11,7 @@ import Footer from '../components/Footer'
 //import { API } from '@aws-amplify/api';
 import { graphqlOperation } from '@aws-amplify/api-graphql';
 import { getLogin } from '../graphql/queries';
-import awsconfig from '../aws-exports';
+import awsconfig from '../aws-exports.js';
 
 const API_KEY = awsconfig.aws_appsync_apiKey;
 const GRAPHQL_ENDPOINT = awsconfig.aws_appsync_graphqlEndpoint;

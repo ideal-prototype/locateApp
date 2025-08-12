@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { Amplify } from 'aws-amplify';
-import config from '../aws-exports';
+import config from '../aws-exports.js';
 
 Amplify.configure(config);
 console.log("Amplify.configure()");

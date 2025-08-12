@@ -1,0 +1,85 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-locateapp-dev-0a1d4-authRole",
+      "UnauthRoleArn": "arn:aws:iam::061808445370:role/amplify-locateapp-dev-0a1d4-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::061808445370:role/amplify-locateapp-dev-0a1d4-authRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-locateapp-dev-0a1d4-deployment",
+      "UnauthRoleName": "amplify-locateapp-dev-0a1d4-unauthRole",
+      "StackName": "amplify-locateapp-dev-0a1d4",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:061808445370:stack/amplify-locateapp-dev-0a1d4/c86da560-ec81-11ef-9a4f-06cd3830b8af",
+      "AmplifyAppId": "dq362pmyimirw"
+    }
+  },
+  "api": {
+    "locateapp": {
+      "dependsOn": [],
+      "output": {
+        "authConfig": {
+          "additionalAuthenticationProviders": [],
+          "defaultAuthentication": {
+            "authenticationType": "API_KEY",
+            "apiKeyConfig": {
+              "apiKeyExpirationDays": 365,
+              "apiKeyExpirationDate": "2026-06-15T16:15:58.439Z",
+              "description": "Mobile App API Key"
+            }
+          }
+        },
+        "GraphQLAPIIdOutput": "yeakhydzbfbf3ayuq5s4rsublu",
+        "GraphQLAPIEndpointOutput": "https://ibrx7gq2prbexgkar3wi2wyrti.appsync-api.ap-northeast-1.amazonaws.com/graphql",
+        "GraphQLAPIKeyOutput": "da2-5yuw3gts4fgmlkyv6visrq3bpe"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "AppSync",
+      "lastPushTimeStamp": "2025-06-15T17:42:44.759Z",
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-locateapp-dev-0a1d4-deployment/amplify-cfn-templates/api/cloudformation-template.json",
+        "logicalId": "apilocateapp"
+      },
+      "lastPushDirHash": "8zNWFn5uSyKTe3padX66jMOXRIg="
+    }
+  },
+  "auth": {
+    "locateapp9eebace0": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false,
+      "frontendAuthConfig": {
+        "socialProviders": [],
+        "usernameAttributes": [],
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyMinLength": 8,
+          "passwordPolicyCharacters": []
+        },
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-locateapp-dev-0a1d4-deployment/amplify-cfn-templates/auth/locateapp9eebace0-cloudformation-template.json",
+        "logicalId": "authlocateapp9eebace0"
+      },
+      "lastPushTimeStamp": "2025-06-15T17:42:42.277Z",
+      "output": {
+        "UserPoolId": "ap-northeast-1_eLpLT8leY",
+        "AppClientIDWeb": "2ek7s8999v3ma4j7sg2j3mhu3v",
+        "AppClientID": "g47fb1ao175b3t3b7d4tlodqk",
+        "IdentityPoolId": "ap-northeast-1:8ee6ac79-362a-49e4-bb9b-25c013c60c2a",
+        "UserPoolArn": "arn:aws:cognito-idp:ap-northeast-1:061808445370:userpool/ap-northeast-1_eLpLT8leY",
+        "IdentityPoolName": "locateapp9eebace0_identitypool_9eebace0__dev",
+        "UserPoolName": "locateapp9eebace0_userpool_9eebace0"
+      },
+      "lastPushDirHash": "HtrPcRZX+EU8DQKTOp+wmmsRKao="
+    }
+  }
+}
