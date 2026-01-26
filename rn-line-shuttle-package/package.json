@@ -1,0 +1,54 @@
+{
+  "name": "@line-shuttle/react-native-shuttle",
+  "version": "0.1.0",
+  "description": "LINE送迎アプリのUIパッケージ（位置情報／乗降車確認／名簿更新）for React Native + TypeScript",
+  "license": "MIT",
+  "homepage": "https://example.local",
+  "repository": {
+    "type": "git",
+    "url": "git+https://example.local/line-shuttle/react-native-shuttle.git"
+  },
+  "main": "./lib/module/index.js",
+  "types": "./lib/typescript/src/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./lib/typescript/src/index.d.ts",
+      "default": "./lib/module/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": ">=18",
+    "react-native": ">=0.72"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/react": "^18.2.0",
+    "react-native-builder-bob": "^0.40.13"
+  },
+  "scripts": {
+    "prepare": "bob build",
+    "build": "bob build",
+    "lint": "echo 'lint step placeholder'",
+    "typecheck": "tsc --noEmit"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      "typescript"
+    ]
+  }
+}

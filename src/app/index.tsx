@@ -1,19 +1,5 @@
-import { Redirect } from 'expo-router'
-//import { onAuthStat } from '@aws-amplify/auth'
+import { Redirect } from 'expo-router';
 
-const Index = (): JSX.Element => {
-  // useEffect(() => {
-  //   onAuthStateChanged(state, (user) => {
-  //     if (user !== null) {
-  //       return <Redirect href='content/Main' />
-  //     } else {
-  //       return <Redirect href='auth/Login' />
-  //     }
-  //   })
-  // }, [])
-
-  return <Redirect href='/Login' />
-  //return <Redirect href='/tabs/TabLocate' />
+export default function Index() {
+  return <Redirect href="/(tabs)" />;
 }
-
-export default Index;
