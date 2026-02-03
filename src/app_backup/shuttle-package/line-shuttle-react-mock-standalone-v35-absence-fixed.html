@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <!--
+      v32 コメント完全版：全コードへ詳細な日本語コメントを付与
+      - 機能・構造・ID・イベントは完全維持（非破壊）
+      - コメントのみ追加。画面動作に変化を与えません
+      - 可読性重視：インデント・空行を微整形（DOM構造・属性順は維持）
+      - 方針：UI簡素化（notice非表示）／安全性（loc-current-busはDOM維持で非表示）
+    -->
+    <!-- v31 コメント強化版：ソース構造そのまま／機能変更なし -->
+    <meta charset="utf-8" /> <!-- 文字コード：UTF-8（日本語の全角も安全に） -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" /> <!-- レスポンシブ：スマホ/タブレットで倍率固定 -->
+    <title><!-- ページタイトル：検証用途の単一HTML（オフライン） -->LINE送迎アプリ モック（単一HTML v21 / オフライン）</title>
+    <style>
+      /* ===============================================
+         スタイル定義（UI外観／役割の説明）
+         - 既存のクラス/IDはそのまま
+         - 号車チップ小型化、ONは角丸ピル
+         - 「名簿更新」「乗降車確認」は内側スクロール廃止→全体スクロール
+         =============================================== */
+      /* ===============================================
+         スタイル定義（UI外観）
+         - 既存のクラス・IDを維持
+         - 号車チップ小型化、角丸ON表示
+         - 名簿更新・乗降車確認はページ全体スクロール
+         =============================================== */
+      /* カラー/影/トークン：テーマ性の統一 */
+      :root{ --bg:#f6f8fb; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb; --accent:#2563eb; --accent-2:#10b981; --warn:#f97316; --danger:#ef4444; --ok:#22c55e; --shadow:0 10px 28px rgba(15,23,42,.10); }
+      /* 境界含むボックスサイズでレイアウト安定化 */
+      *{ box-sizing:border-box; } /* 100%高：stickyや全体スクロールのため */
+      html,body{ height:100%; }
+      /* ベースフォント/背景：日本語可読性を優先 */
+      body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif; background:var(--bg); color:var(--text); }
+      body.modal-open{ overflow:hidden; }
+      /* アプリラッパ：縦積み（ヘッダ・本文・タブ） */
+      .app{ min-height:100dvh; display:flex; flex-direction:column; }
+      /* ヘッダ：半透明＋Blur／下線で区切り */
+      header.app-header{ padding:16px 18px; background:#ffffffcc; backdrop-filter: blur(6px); border-bottom:1px solid var(--border); }
+      header.app-header h1{ font-size:17px; margin:0; font-weight:700; color:#334155; }
+      /* 本文：下部タブを除く残り高さ */
+      main{ flex:1; padding:16px; }
+      /* 強制非表示：JSの切替に使用 */
+      .hidden{ display:none !important; }
+
+      /* カード：白背景＋角丸＋影（画面枠） */
+      .card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:14px; box-shadow:var(--shadow); }
+      /* タイトル横の行：現在の状態を示す */
+      .top-status{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:#eef2ff; margin-bottom:12px; }
+      /* 丸アイコン：送信/停止の色分け */
+      .icon{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center; color:#fff; box-shadow:var(--shadow); font-size:20px; }
+      .icon.play{ background:#22c55e; } .icon.stop{ background:#f97316; }
+
+      /* コントロール群：日付/行き帰り/号車等 */
+      .controls{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+      /* 画面下部のアクション群：確定等 */
+      .actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+      /* 入力UI：タップしやすい角丸 */
+      select, input[type=date]{ background:#fff; color:var(--text); border:2px solid var(--border); border-radius:16px; padding:14px 16px; font-size:18px; }
+      /* 大きめセレクト（位置情報の号車など） */
+      .giant-select{ font-size:20px; padding:16px 18px; border-width:3px; border-radius:20px; }
+      /* 主要ボタン：青系グラデ */
+      button.primary{ background:linear-gradient(90deg, var(--accent), #60a5fa); color:white; border:none; padding:14px 18px; border-radius:18px; cursor:pointer; box-shadow:var(--shadow); font-size:18px; }
+      /* 副次ボタン：白背景＋枠線 */
+      button.secondary{ background:#fff; color:#0f172a; border:2px solid var(--border); padding:14px 18px; border-radius:18px; cursor:pointer; font-size:18px; }
+
+      /* 名簿枠：角丸＋最大高（内側スクロールはv30以降で無効） */
+      .list{ border:1px solid var(--border); border-radius:16px; overflow:auto; max-height:60vh; -webkit-overflow-scrolling: touch; }
+      /* 名簿UL：余白を排除 */
+      .kids{ list-style:none; margin:0; padding:0; }
+      /* 名簿1行：上下余白＋罫線 */
+      .kids li{ display:flex; flex-direction:column; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
+      .kids li:last-child{ border-bottom:none; }
+      /* 名簿行ヘッダ：左=名前（折返し可）／右=ステータス（改行禁止） */
+      /* 行ヘッダ：左=名前（折返し可）／右=ステータス（改行禁止） */
+      .kid-header{ display:grid; grid-template-columns: 1fr auto auto; align-items:center; gap:10px; }
+      /* フルネームは必ず表示（折返し可） */
+      /* フルネーム：必ず表示（折返し可） */
+      .fullname{ font-weight:800; font-size:17px; white-space:normal; line-height:1.3; }
+      /* 小型チップ：軽い属性表示用 */
+      .chip{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:2px solid var(--border); border-radius:999px; background:#fff; font-size:12px; color:#334155; }
+      /* ステータスピル：1行維持 */
+      /* ステータスピル：同一行維持（改行禁止） */
+      .status-pill{ font-size:12px; padding:6px 10px; border-radius:999px; background:#e2e8f0; color:#0f172a; justify-self:end; }
+      .status-wait{ background:#e2e8f0; color:#0f172a; }
+      .status-ride-on{ background:#dbeafe; color:#1e40af; }
+      .status-ride-ok{ background:#dcfce7; color:#166534; }
+      .status-drop-on{ background:#fde68a; color:#92400e; }
+      .status-drop-ok{ background:#fee2e2; color:#b91c1c; }
+
+      /* 下部タブ：位置/確認/名簿（3分割） */
+      .bottom-nav{ position:sticky; bottom:0; background:#ffffffee; border-top:1px solid var(--border); display:grid; grid-template-columns: repeat(4, 1fr); }
+      /* タブボタン：縦積みアイコン＋ラベル */
+      .bottom-nav button{ appearance:none; background:transparent; color:#334155; border:none; padding:14px 12px; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+      /* タブ選択中の色（青） */
+      .bottom-nav .active{ color:#2563eb; }
+
+      .badge{ padding:6px 10px; border-radius:999px; font-size:12px; }
+      .badge.sending{ background:#e0f2fe; color:#0369a1; } .badge.stopped{ background:#fee2e2; color:#b91c1c; }
+
+      /* === セグメント（行き/帰り＋号車） === */
+      /* 行き/帰りなどのセグメント：角丸ピルUI */
+      .seg{ display:flex; gap:0; border:3px solid var(--border); border-radius:18px; overflow:hidden; }
+      /* セグメントの各ボタン */
+      .seg-btn{ flex:1; padding:16px 22px; background:#fff; border:none; cursor:pointer; font-size:20px; font-weight:700; letter-spacing:0.02em; }
+      .seg-btn:focus{ outline:none; }
+      /* セグメントの選択中（ON） */
+      .seg-btn.active{ background:#e0f2fe; color:#0369a1; box-shadow: inset 0 0 0 2px #93c5fd; }
+
+      /* === トグルボタン（乗降のON/OFF） === */
+      .toggle-row{ display:flex; gap:10px; }
+      .toggle-btn{ flex:1; padding:14px 16px; border:2px solid var(--border); border-radius:16px; background:#fff; color:#334155; font-weight:800; cursor:pointer; text-align:center; }
+      .toggle-btn.on{ background:#3b82f6; color:#fff; border-color:#1d4ed8; }
+      .toggle-btn.disabled{ opacity:.5; cursor:not-allowed; }
+
+      /* ===== 位置情報（スマホ/タブレット対応） ===== */
+      /* 位置情報：左=巨大トグル、右=パネル */
+      .loc-layout{ display:grid; gap:16px; grid-template-columns: 1fr; }
+      /* 巨大トグルの位置合わせ（中央） */
+      .giant-wrap{ height:48vh; display:flex; align-items:center; justify-content:center; }
+      /* 巨大トグル（送信/停止）：丸ボタン */
+      .giant-btn{ width:min(52vh, 78vw); height:min(52vh, 78vw); border-radius:50%; display:grid; place-items:center; color:#fff; box-shadow:var(--shadow); cursor:pointer; touch-action:manipulation; }
+      .giant-btn.play{ background:#22c55e; } .giant-btn.stop{ background:#f97316; }
+      .giant-btn .glyph{ font-size:52px; line-height:1; }
+      /* 巨大トグルの状態テキスト */
+      .giant-text{ text-align:center; margin-top:18px; font-weight:800; font-size:18px; line-height:1.4; }
+      .loc-controls{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+      /* 位置情報右パネル：日付/号車/チップ一覧 */
+      .loc-panel{ background:#fff; border:1px solid var(--border); border-radius:16px; padding:12px; }
+
+      /* 号車チップの並び（1列） */
+      /* 号車チップの縦並び（1列） */
+      .bus-grid{ display:grid; grid-template-columns: 1fr; gap:10px; }
+      /* 号車チップ（各画面共通）：小型＆改行禁止 */
+      /* 号車チップ：小型＆改行禁止（例：2号車（A）の（A）改行防止） */
+      .bus-chip{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:2px solid var(--border); border-radius:16px; background:#fff; font-size:16px; cursor:pointer; }
+      .bus-chip .left{ display:flex; align-items:center; gap:10px; }
+      .bus-dot{ width:14px; height:14px; border-radius:999px; } .bus-dot.on{ background:#22c55e; } .bus-dot.off{ background:#ef4444; }
+      .bus-state{ font-size:12px; color:#64748b; }
+
+      @media (min-width:900px){
+        /* 位置情報：左=巨大トグル、右=パネル */
+      .loc-layout{ grid-template-columns: 1fr 1fr; align-items:start; }
+        /* 巨大トグルの位置合わせ（中央） */
+      .giant-wrap{ height:52vh; }
+        /* 号車チップの並び（1列） */
+      /* 号車チップの縦並び（1列） */
+      .bus-grid{ grid-template-columns: 1fr; }
+        /* 位置情報右パネル：日付/号車/チップ一覧 */
+      .loc-panel{ padding:16px; }
+        /* 大きめセレクト（位置情報の号車など） */
+      .giant-select{ font-size:22px; padding:18px 20px; }
+      }
+
+      /* ===== 名簿（タブレット） ===== */
+      /* 名簿更新（タブレット時2列） */
+      .tablet-boards{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+      /* 左右の列コンテナ：白背景＋影 */
+      .tablet-column{ background:#fff; border:1px solid var(--border); border-radius:16px; padding:10px; box-shadow:var(--shadow); }
+      /* 列ヘッダ：号車セグメント＋人数カウント */
+      .tablet-column header{ position:sticky; top:0; z-index:1; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:6px 8px 10px; border-bottom:1px solid var(--border); color:#334155; }
+      /* 列内の名簿領域：ドラッグ/スワイプ対象（v30以降は全体スクロールに合わせる） */
+      .tablet-list{ min-height:60vh; max-height:70vh; border:1px dashed var(--border); border-radius:12px; padding:6px; position:relative; overflow:auto; -webkit-overflow-scrolling:touch; }
+      .kid-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; background:#f1f5f9; padding:12px; border-radius:12px; margin:8px; touch-action:none; font-size:16px; }
+      .kid-row .name{ font-weight:800; }
+      .kid-row .hint{ font-size:12px; color:#64748b; }
+      .drag-ghost{ position:fixed; pointer-events:none; z-index:9999; transform:translate(-50%, -50%); box-shadow:var(--shadow); }
+      .drop-target{ outline:3px dashed #60a5fa; outline-offset:4px; }
+      @media (max-width:900px){ /* 名簿更新（タブレット時2列） */
+      .tablet-boards{ grid-template-columns: 1fr; } }
+
+      /* ダイアログ（中央固定） */
+      .dialog-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:99999; }
+      .dialog{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); width:min(520px, 92vw); max-height:80vh; overflow:auto; }
+      .dialog header{ padding:14px 16px; border-bottom:1px solid var(--border); font-weight:800; font-size:16px; text-align:center; }
+      .dialog .body{ padding:16px; font-size:14px; white-space:pre-line; }
+      .dialog /* 画面下部のアクション群：確定等 */
+      .actions{ display:flex; gap:10px; justify-content:center; padding:12px 16px; border-top:1px solid var(--border); }
+    
+      /* ==== v30 追加調整（軽量・非干渉） ==== */
+      #loc-current-bus{ display:none; }
+      /* 号車チップ（各画面共通）：小型＆改行禁止 */
+      /* 号車チップ：小型＆改行禁止（例：2号車（A）の（A）改行防止） */
+      .bus-chip{ display:flex; align-items:center; justify-content:space-between; gap:4px; padding:5px 7px; border:2px solid var(--border); border-radius:10px; background:#fff; font-size:12px; cursor:pointer; white-space:nowrap; }
+      .bus-chip *{ white-space:nowrap; }
+      /* 号車チップの並び（1列） */
+      /* 号車チップの縦並び（1列） */
+      .bus-grid{ display:grid; grid-template-columns: 1fr; gap:6px; }
+      /* 行き/帰りなどのセグメント：角丸ピルUI */
+      .seg{ display:flex; gap:6px; border:none; background:transparent; }
+      /* セグメントの各ボタン */
+      .seg-btn{ flex:1; padding:12px 16px; background:#fff; border:2px solid var(--border); border-radius:999px; cursor:pointer; font-size:16px; font-weight:700; letter-spacing:0.02em; }
+      .seg-btn:focus{ outline:none; }
+      /* セグメントの選択中（ON） */
+      .seg-btn.active{ background:#e0f2fe; color:#0369a1; border-color:#93c5fd; box-shadow: inset 0 0 0 2px #93c5fd; }
+      /* 名簿行ヘッダ：左=名前（折返し可）／右=ステータス（改行禁止） */
+      /* 行ヘッダ：左=名前（折返し可）／右=ステータス（改行禁止） */
+      .kid-header{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:8px; }
+      /* フルネームは必ず表示（折返し可） */
+      /* フルネーム：必ず表示（折返し可） */
+      .fullname{ font-weight:800; font-size:17px; white-space:normal; line-height:1.3; }
+      /* ステータスピル：1行維持 */
+      /* ステータスピル：同一行維持（改行禁止） */
+      .status-pill{ white-space:nowrap; }
+      /* 乗降車確認の名簿：内側スクロール無効化 */
+      #screen-boarding /* 名簿枠：角丸＋最大高（内側スクロールはv30以降で無効） */
+      .list{ max-height:none; overflow:visible; }
+      /* 名簿更新の左右リスト：内側スクロール無効化 */
+      #screen-roster /* 列内の名簿領域：ドラッグ/スワイプ対象（v30以降は全体スクロールに合わせる） */
+      .tablet-list{ max-height:none; overflow:visible; }
+      /* お知らせボタンはUIから非表示（JSでDOMも削除） */
+      #board-notice{ display:none !important; }
+
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header"> <!-- アプリ共通ヘッダ：タイトル表示のみ（ナビは下部タブ） --><h1>LINE送迎アプリ モック（オフライン・単一HTML v21）</h1></header>
+      <main> <!-- 画面本体：下部タブに連動して各セクションを表示/非表示 -->
+        <!-- 位置情報（号車=A/B/2A、セグメント切替） -->
+        <!-- 位置情報画面：巨大トグル＋号車切替（A/B/2A） -->
+        <section id="screen-location" class="card">
+          <div class="loc-layout">
+            <!-- 左：巨大トグル -->
+            <div>
+              <div class="giant-wrap"><div class="giant-btn play" id="giant-toggle"><span class="glyph">▶</span></div></div>
+              <div class="giant-text" id="giant-text">停止中（タップで送信）</div>
+            </div>
+            <!-- 右：操作パネル -->
+            <div class="loc-panel">
+              <div class="controls" style="margin-bottom:10px">
+                <input type="date" id="loc-date" />
+                <span class="badge" id="loc-current-bus">1号車（A）</span>
+              </div>
+              <!-- 号車セグメント（位置情報用：A/B/2A） -->
+              <div class="seg" id="loc-bus-seg" style="margin-bottom:10px"></div>
+              <div class="bus-grid" id="loc-bus-grid"></div>
+              <small style="display:block; color:#64748b; margin-top:8px">各号車チップをタップすると送信/停止を切り替えできます。</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- 乗降車確認（タイトル変更／乗降ボタン仕様） -->
+        <!-- 乗降車確認画面：名簿の確認・確定。ステータスは右横に表示 -->
+        <section id="screen-boarding" class="card hidden">
+          <div class="top-status">
+            <span class="icon play"><span class="glyph">📋</span></span>
+            <strong>乗降車確認</strong>
+            <span class="badge sending" id="board-bus-badge">1号車（A）</span>
+            <span class="chip" id="board-bus-state"><span class="bus-dot off"></span><span>停止中</span></span>
+          </div>
+          <div class="controls" style="margin-bottom:12px">
+            <input type="date" id="board-date" />
+            <!-- 行き/帰り -->
+            <div class="seg" aria-label="行き帰り切替">
+              <button id="board-go" class="seg-btn">行き</button>
+              <button id="board-back" class="seg-btn">帰り</button>
+            </div>
+            <!-- 号車（A/B/2A/徒歩） -->
+            <div class="seg" id="board-bus-seg" aria-label="号車切替"></div>
+            <button class="secondary" id="board-notice">お知らせ</button>
+          </div>
+          <p class="badge stopped hidden" id="board-past">過去日付のため編集不可</p>
+          <div class="list" role="list"><ul class="kids" id="board-list" <!-- 乗降車確認の名簿リスト（既存ロジックで差し替え） -->></ul></div>
+          <div class="actions" id="board-actions" style="margin-top:12px"></div>
+        </section>
+
+        <!-- 名簿更新（左右2リスト／号車セグメント切替） -->
+
+        <!-- 欠席確認画面：当日/過去日の欠席一覧（5名の例） -->
+        <section id="screen-absence" class="card hidden">
+          <div class="top-status">
+            <span class="icon stop"><span class="glyph">🙇</span></span>
+            <strong>欠席確認</strong>
+          </div>
+          <div class="controls" style="margin-bottom:12px">
+            <input type="date" id="absence-date" />
+            <span class="badge stopped">当日や過去日付の欠席状況を確認</span>
+          </div>
+          <div class="list" role="list">
+            <ul class="kids" id="absence-list">
+              <li>
+                <div class="kid-header">
+                  <span class="fullname">あまね さき</span>
+                  <span class="status-pill status-wait">発熱</span>
+                </div>
+                <small class="muted">備考：体温 38.5 度</small>
+              </li>
+              <li>
+                <div class="kid-header">
+                  <span class="fullname">いとう はるか</span>
+                  <span class="status-pill status-wait">インフルエンザ</span>
+                </div>
+                <small class="muted">備考：高熱のため受診予定</small>
+              </li>
+              <li>
+                <div class="kid-header">
+                  <span class="fullname">うえの そうた</span>
+                  <span class="status-pill status-wait">慶弔休暇</span>
+                </div>
+                <small class="muted">備考：祖母の葬式</small>
+              </li>
+              <li>
+                <div class="kid-header">
+                  <span class="fullname">えんどう みゆ</span>
+                  <span class="status-pill status-wait">発熱</span>
+                </div>
+                <small class="muted">備考：解熱後 24h 観察</small>
+              </li>
+              <li>
+                <div class="kid-header">
+                  <span class="fullname">おおた けい</span>
+                  <span class="status-pill status-wait">インフルエンザ</span>
+                </div>
+                <small class="muted">備考：医師の登園許可待ち</small>
+              </li>
+            </ul>
+          </div>
+        </section>
+    
+        <!-- 乗車名簿更新画面：左右2リスト（タブレット対応）。スマホは全体スクロールに統一 -->
+        <section id="screen-roster" class="card hidden">
+          <div class="top-status">
+            <span class="icon play"><span class="glyph">🗂️</span></span>
+            <strong>乗車名簿更新</strong>
+          </div>
+          <div class="controls" style="margin-bottom:12px">
+            <input type="date" id="roster-date" />
+            <div class="seg" aria-label="行き帰り切替">
+              <button id="roster-go" class="seg-btn">行き</button>
+              <button id="roster-back" class="seg-btn">帰り</button>
+            </div>
+            <span class="badge sending" id="roster-editable">当日：編集可（ドラッグ/スワイプで移動）</span>
+          </div>
+          <div class="tablet-boards">
+            <div class="tablet-column">
+              <header>
+                <div class="seg" id="roster-left-bus-seg" aria-label="左号車切替"></div>
+                <span class="hint" id="left-count">0人</span>
+              </header>
+              <div class="tablet-list" id="left-list" <!-- 名簿更新：左列リスト（ドラッグ/スワイプ対象） -->></div>
+            </div>
+            <div class="tablet-column">
+              <header>
+                <div class="seg" id="roster-right-bus-seg" aria-label="右号車切替"></div>
+                <span class="hint" id="right-count">0人</span>
+              </header>
+              <div class="tablet-list" id="right-list" <!-- 名簿更新：右列リスト（ドラッグ/スワイプ対象） -->></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" role="tablist">
+        <button id="tab-location" class="active" aria-label="位置情報"><span>📡</span><span>位置情報</span></button>
+        <button id="tab-boarding" aria-label="乗降車確認"><span>✅</span><span>乗降車確認</span></button>
+        <button id="tab-roster" aria-label="名簿更新"><span>🗂️</span><span>名簿更新</span></button>
+      
+  <button id="tab-absence" aria-label="欠席確認"><span>🙇</span><span>欠席確認</span></button>
+</nav>
+    </div>
+
+    <!-- Dialogs -->
+    <div class="dialog-backdrop hidden" id="dialog-backdrop">
+      <div class="dialog">
+        <header id="dialog-title">確認</header>
+        <div class="body" id="dialog-body"></div>
+        <div class="actions">
+          <button class="secondary" id="dialog-cancel">いいえ</button>
+          <button class="primary" id="dialog-ok">はい</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    // =====================================================
+    // 挙動補助スクリプト（機能は既存のまま／軽量・非干渉）
+    // - 初期化時にUI不要要素を除去（お知らせ、徒歩組）
+    // - 既存のクリック処理やデータ切替には触れません
+    // =====================================================
+      // ===== ユーティリティ =====
+      const $ = sel => document.querySelector(sel); // 簡易セレクタ：最初の一致要素を返す
+      const show = el => el.classList.remove('hidden'); // 要素を表示（hiddenクラス除去）
+      const hide = el => el.classList.add('hidden'); // 要素を非表示（hiddenクラス追加）
+      const todayStr = () => new Date().toISOString().slice(0,10); // YYYY-MM-DD 形式の本日文字列
+      const BUS_LOCATION = ['1号車（A）','1号車（B）','2号車（A）']; // 位置情報画面で扱う号車（A/B/2A）
+      const BUS_FULL     = ['1号車（A）','1号車（B）','2号車（A）','徒歩組']; // 乗降車確認/名簿更新で扱う号車（徒歩組含む：後述で除去）
+
+      // ===== 画面切替 =====
+      const screens = {
+        location: $('#screen-location'),  // 位置情報
+        boarding: $('#screen-boarding'),  // 乗降車確認
+        roster:   $('#screen-roster')     // 名簿更新
+,
+
+        absence:  $('#screen-absence')   // 欠席確認 ← 追加
+};
+      function setTab(name){
+        // 画面切替：全セクションを一旦非表示→対象のみ表示
+        Object.values(screens).forEach(hide);
+        show(screens[name]);
+        // タブの選択状態を更新
+        document.querySelectorAll('.bottom-nav button').forEach(b=> b.classList.remove('active'));
+        $('#tab-'+name).classList.add('active');
+      }
+      $('#tab-location').onclick = ()=> setTab('location'); $('#tab-boarding').onclick = ()=> setTab('boarding'); $('#tab-roster').onclick = ()=> setTab('roster'); $('#tab-absence').onclick = ()=> setTab('absence');
+
+      // ===== ダイアログ（中央） =====
+      const dialogBackdrop=$('#dialog-backdrop'); const dialogTitle=$('#dialog-title'); const dialogBody=$('#dialog-body'); const dialogOk=$('#dialog-ok'); const dialogCancel=$('#dialog-cancel');
+      function openConfirm(title, message, onOk){ dialogTitle.textContent=title; dialogBody.textContent=message; show(dialogBackdrop); document.body.classList.add('modal-open'); dialogOk.onclick=()=>{ hide(dialogBackdrop); document.body.classList.remove('modal-open'); onOk&&onOk(); }; dialogCancel.onclick=()=>{ hide(dialogBackdrop); document.body.classList.remove('modal-open'); }; }
+
+      // ===== データストア（日付×方向×号車） =====
+      const DIR = { GO:'行き', BACK:'帰り' };
+      const NAME_LIST = [
+        'あべ ひろ', 'あまね さき', 'あやせ りお', 'いしだ なお', 'いとう かな', 'いまむら そう', 'うえだ りく', 'えがわ みな', 'おがわ あお', 'おの しん',
+        'かさい まこ', 'かとう けい', 'かねだ はる', 'かわぐち なお', 'きたむら ひかり', 'きむら りこ', 'くどう たいち', 'くまがい ゆい', 'こいけ るな', 'こが こはる',
+        'さいとう そうま', 'さかもと ひなた', 'ささき りょう', 'しみず はな', 'すずき いつき', 'せきぐち あかり', 'たかぎ みく', 'たかはし れん', 'たけうち しおり', 'たなか まな',
+        'ちば そうた', 'つじ りん', 'てらだ えみ', 'とみた なお', 'ながい みさき', 'なかがわ けん', 'なかむら こころ', 'にしだ あや', 'ぬまざわ たいが', 'のぐち さくら',
+        'はやし つばさ', 'はっとり りん', 'ひがし みお', 'ひぐち けい', 'ふじた あおい', 'ほしの かなで', 'まつい しん', 'まつもと りく', 'みうら はる', 'みずの えり', 'むらかみ かのん'
+      ];
+      const initialKids = ()=>{
+        const kids=[]; let id=1; const pick=()=> NAME_LIST[(id-1)%NAME_LIST.length];
+        const assign=(bus,count)=>{ for(let i=0;i<count;i++){ kids.push({id:id++, name:pick(), bus:bus, ride:false, drop:false}); } };
+        assign('1号車（A）',15); assign('1号車（B）',16); assign('2号車（A）',0); assign('徒歩組',20);
+        return kids;
+      };
+      const store = {
+        state: { currentDate: todayStr(), direction: DIR.GO, currentBusLocation:'1号車（A）', currentBusBoarding:'1号車（A）', currentBusRosterLeft:'1号車（A）', currentBusRosterRight:'徒歩組' },
+        db: {},
+        ensureDay(date){ if(this.db[date]) return; const dirData=()=>({ kids: initialKids(), perBus:{ '1号車（A）':{rideLocked:false,dropLocked:false}, '1号車（B）':{rideLocked:false,dropLocked:false}, '2号車（A）':{rideLocked:false,dropLocked:false}, '徒歩組':{rideLocked:false,dropLocked:false} } }); this.db[date]={ location:{ '1号車（A）':false,'1号車（B）':false,'2号車（A）':false }, directions:{ '行き':dirData(), '帰り':dirData() } }; },
+        setDate(date){ this.ensureDay(date); this.state.currentDate = date; }, setDirection(d){ this.state.direction = d; },
+        day(){ this.ensureDay(this.state.currentDate); return this.db[this.state.currentDate]; }, dir(){ return this.day().directions[this.state.direction]; },
+        locationSending(bus){ return this.day().location[bus]; }, toggleLocation(bus){ this.day().location[bus] = !this.day().location[bus]; },
+        listKids(bus){ return this.dir().kids.filter(k=> k.bus===bus); }, moveKid(id, toBus){ const k=this.dir().kids.find(x=>x.id===id); if(k) k.bus=toBus; },
+        setRide(id, val){ const k=this.dir().kids.find(x=>x.id===id); if(k){ k.ride=val; if(!val) k.drop=false; } }, setDrop(id, val){ const k=this.dir().kids.find(x=>x.id===id); if(k){ k.drop=val; } },
+        busLock(bus){ return this.dir().perBus[bus]; }, confirmRide(bus){ this.busLock(bus).rideLocked=true; }, confirmDrop(bus){ this.busLock(bus).dropLocked=true; },
+        cancelRide(bus){ const lock=this.busLock(bus); lock.rideLocked=false; lock.dropLocked=false; this.dir().kids.filter(k=>k.bus===bus).forEach(k=> k.drop=false); }, cancelDrop(bus){ this.busLock(bus).dropLocked=false; },
+        rosterEditable(bus){ const l=this.busLock(bus); return !(l.rideLocked || l.dropLocked); }
+      };
+      store.ensureDay(store.state.currentDate);
+
+      // ===== 共通：セグメント生成 =====
+      function buildSeg(container, items, current, onSelect){ container.innerHTML=''; items.forEach(txt=>{ const b=document.createElement('button'); b.className='seg-btn'; b.textContent=txt; b.classList.toggle('active', txt===current()); b.onclick=()=>{ onSelect(txt); }; container.appendChild(b); }); }
+
+      // ===== 位置情報 =====
+      function renderLocation(){
+        const dateInput = $('#loc-date'); const curBadge=$('#loc-current-bus'); const busSeg=$('#loc-bus-seg'); const busGrid=$('#loc-bus-grid'); const giant=$('#giant-toggle'); const giantText=$('#giant-text');
+        dateInput.value = store.state.currentDate; dateInput.onchange = ()=>{ store.setDate(dateInput.value); syncDates(); renderAll();
+ // 欠席確認：日付初期値を当日に（未設定時のみ）
+ (function(){const d=document.getElementById('absence-date'); if(d && !d.value){d.value=new Date().toISOString().slice(0,10);} })(); };
+        buildSeg(busSeg, BUS_LOCATION, ()=>store.state.currentBusLocation, (sel)=>{ store.state.currentBusLocation=sel; renderLocation(); });
+        curBadge.textContent = store.state.currentBusLocation;
+        const sending = store.locationSending(store.state.currentBusLocation);
+        if(sending){ giant.className='giant-btn stop'; giant.querySelector('.glyph').textContent='■'; giantText.textContent='送信中（タップで停止）'; } else { giant.className='giant-btn play'; giant.querySelector('.glyph').textContent='▶'; giantText.textContent='停止中（タップで送信）'; }
+        giant.onclick = ()=>{ const bus = store.state.currentBusLocation; const next = !store.locationSending(bus); const msg = next? `【位置情報送信開始】\n${store.state.currentDate} / ${bus}` : `【位置情報送信停止】\n${store.state.currentDate} / ${bus}`; openConfirm('位置情報', msg, ()=>{ store.toggleLocation(bus); renderLocation(); renderBoardBusState(); }); };
+        busGrid.innerHTML=''; BUS_LOCATION.forEach(b=>{ const on = store.locationSending(b); const chip=document.createElement('div'); chip.className='bus-chip'; chip.innerHTML=`<div class="left"><span class="bus-dot ${on?'on':'off'}"></span><strong>${b}</strong></div><span class="bus-state">${on?'送信中':'停止中'}</span>`; chip.onclick=()=>{ const next = !store.locationSending(b); const msg = next? `【位置情報送信開始】\n${store.state.currentDate} / ${b}` : `【位置情報送信停止】\n${store.state.currentDate} / ${b}`; openConfirm('位置情報', msg, ()=>{ store.toggleLocation(b); renderLocation(); renderBoardBusState(); }); }; busGrid.appendChild(chip); });
+      }
+
+      // ===== 乗降車確認（ON/OFFを枠ボタンに） =====
+      function renderBoard(){
+        const dateInput = $('#board-date'); const goBtn=$('#board-go'); const backBtn=$('#board-back'); const busSeg=$('#board-bus-seg'); const list=$('#board-list'); const badge=$('#board-bus-badge'); const pastMsg=$('#board-past'); const actions=$('#board-actions');
+        dateInput.value = store.state.currentDate; dateInput.onchange = ()=>{ store.setDate(dateInput.value); syncDates(); setTab('boarding'); renderBoard(); };
+        const setDir = d=>{ store.setDirection(d); goBtn.classList.toggle('active', d==='行き'); backBtn.classList.toggle('active', d==='帰り'); setTab('boarding'); renderBoard(); };
+        goBtn.onclick = ()=> setDir('行き'); backBtn.onclick = ()=> setDir('帰り'); goBtn.classList.toggle('active', store.state.direction==='行き'); backBtn.classList.toggle('active', store.state.direction==='帰り');
+        buildSeg(busSeg, BUS_FULL, ()=>store.state.currentBusBoarding, (sel)=>{ store.state.currentBusBoarding=sel; renderBoard(); });
+        const bus = store.state.currentBusBoarding; badge.textContent=bus; const isPast = (new Date(store.state.currentDate) < new Date(todayStr())); pastMsg.classList.toggle('hidden', !isPast);
+        renderBoardBusState(); list.innerHTML=''; const kids = store.listKids(bus); const lock = store.busLock(bus);
+
+        kids.forEach(k=>{
+          const li=document.createElement('li');
+          const header=document.createElement('div'); header.className='kid-header';
+          const nameSpan=document.createElement('span'); nameSpan.className='fullname'; nameSpan.textContent=k.name;
+          const info=document.createElement('div'); info.innerHTML=`<span class="chip">${bus}</span> <span class="chip">${store.state.direction}</span>`;
+          const status=document.createElement('span');
+          const s = (!k.ride && !k.drop)? '未乗車' : (k.ride && !lock.rideLocked)? '乗車中' : (k.ride && lock.rideLocked && !k.drop)? '乗車確定' : (k.ride && k.drop && !lock.dropLocked)? '降車中' : '降車確定';
+          const cls = s==='未乗車'? 'status-wait' : s==='乗車中'? 'status-ride-on' : s==='乗車確定'? 'status-ride-ok' : s==='降車中'? 'status-drop-on' : 'status-drop-ok';
+          status.className='status-pill '+cls; status.textContent=s; header.append(nameSpan, info, status);
+
+          const toggles=document.createElement('div'); toggles.className='toggle-row';
+          // 乗車トグル（ボタン化）
+          const rideBtn=document.createElement('div'); rideBtn.className='toggle-btn'+(k.ride?' on':''); rideBtn.textContent='乗車';
+          const rideDisabled = isPast || lock.rideLocked;
+          if(rideDisabled){ rideBtn.classList.add('disabled'); } else {
+            rideBtn.onclick = ()=>{ store.setRide(k.id, !k.ride); renderBoard(); };
+          }
+          // 降車トグル（ボタン化）
+          const dropBtn=document.createElement('div'); dropBtn.className='toggle-btn'+(k.drop?' on':''); dropBtn.textContent='降車';
+          const dropEnabled = !isPast && lock.rideLocked && k.ride && !lock.dropLocked;
+          if(!dropEnabled){ dropBtn.classList.add('disabled'); } else {
+            dropBtn.onclick = ()=>{ store.setDrop(k.id, !k.drop); renderBoard(); };
+          }
+          toggles.append(rideBtn, dropBtn);
+          li.append(header, toggles); list.appendChild(li);
+        });
+
+        actions.innerHTML=''; const confirmBtn=document.createElement('button'); confirmBtn.className='primary'; const cancelBtn=document.createElement('button'); cancelBtn.className='secondary'; cancelBtn.classList.add('hidden');
+        const showRideConfirm = !isPast && !lock.rideLocked && !lock.dropLocked;
+        const showDropConfirm = !isPast && lock.rideLocked && !lock.dropLocked;
+        const showCancelRide  = !isPast && lock.rideLocked && !lock.dropLocked;
+        const showCancelDrop  = !isPast && lock.dropLocked;
+        if(showRideConfirm){ confirmBtn.textContent='乗車確定'; confirmBtn.onclick = ()=>{ const checked = kids.filter(k=>k.ride).length; openConfirm('乗車確定', `日付: ${store.state.currentDate}\n号車: ${bus}\n${store.state.direction}\n乗車チェック ${checked}件を確定します。`, ()=>{ store.confirmRide(bus); renderBoard(); }); }; }
+        else if(showDropConfirm){ confirmBtn.textContent='降車確定'; confirmBtn.onclick = ()=>{ const checked = kids.filter(k=>k.drop).length; openConfirm('降車確定', `日付: ${store.state.currentDate}\n号車: ${bus}\n${store.state.direction}\n降車チェック ${checked}件を確定します。`, ()=>{ store.confirmDrop(bus); renderBoard(); }); }; cancelBtn.textContent='乗車確定取消'; cancelBtn.classList.remove('hidden'); cancelBtn.onclick = ()=>{ openConfirm('乗車確定取消', `日付: ${store.state.currentDate}\n号車: ${bus}\n${store.state.direction}\n乗車確定を取り消します。`, ()=>{ store.cancelRide(bus); renderBoard(); }); }; }
+        else if(showCancelDrop){ confirmBtn.classList.add('hidden'); cancelBtn.textContent='降車確定取消'; cancelBtn.classList.remove('hidden'); cancelBtn.onclick = ()=>{ openConfirm('降車確定取消', `日付: ${store.state.currentDate}\n号車: ${bus}\n${store.state.direction}\n降車確定を取り消します。`, ()=>{ store.cancelDrop(bus); renderBoard(); }); }; }
+        else { confirmBtn.classList.add('hidden'); cancelBtn.classList.add('hidden'); }
+        actions.append(confirmBtn, cancelBtn);
+      }
+
+      function renderBoardBusState(){ const dot = document.querySelector('#board-bus-state .bus-dot'); const txt = $('#board-bus-state span:last-child'); const bus = store.state.currentBusBoarding; const sending = BUS_LOCATION.includes(bus)? store.locationSending(bus) : false; dot.className='bus-dot '+(sending?'on':'off'); txt.textContent = sending? '送信中':'停止中'; }
+
+      // ===== 名簿更新（左右：号車セグメント） =====
+      function renderRoster(){
+        const dateInput = $('#roster-date'); const goBtn=$('#roster-go'); const backBtn=$('#roster-back'); const leftSeg=$('#roster-left-bus-seg'); const rightSeg=$('#roster-right-bus-seg'); const leftList=$('#left-list'); const rightList=$('#right-list'); const leftCount=$('#left-count'); const rightCount=$('#right-count'); const editable=$('#roster-editable');
+        dateInput.value = store.state.currentDate; dateInput.onchange = ()=>{ store.setDate(dateInput.value); syncDates(); setTab('roster'); renderRoster(); };
+        const setDir = d=>{ store.setDirection(d); goBtn.classList.toggle('active', d==='行き'); backBtn.classList.toggle('active', d==='帰り'); setTab('roster'); renderRoster(); };
+        goBtn.onclick = ()=> setDir('行き'); backBtn.onclick = ()=> setDir('帰り'); goBtn.classList.toggle('active', store.state.direction==='行き'); backBtn.classList.toggle('active', store.state.direction==='帰り');
+        const isPast = (new Date(store.state.currentDate) < new Date(todayStr())); editable.classList.toggle('hidden', isPast);
+        buildSeg(leftSeg, BUS_FULL, ()=>store.state.currentBusRosterLeft, (sel)=>{ store.state.currentBusRosterLeft=sel; renderRoster(); renderBoard(); });
+        buildSeg(rightSeg, BUS_FULL, ()=>store.state.currentBusRosterRight, (sel)=>{ store.state.currentBusRosterRight=sel; renderRoster(); });
+        const build = (bus, mount, countEl, side)=>{ const kids = store.listKids(bus); mount.innerHTML=''; countEl.textContent = `${kids.length}人`; const locked = !store.rosterEditable(bus); kids.forEach(k=>{ const row=document.createElement('div'); row.className='kid-row'; row.setAttribute('data-id', String(k.id)); row.innerHTML = `<div class="name"><span class="fullname">${k.name}</span></div><div class="hint">${locked? '編集不可' : (side==='left'? `右へドラッグで「${store.state.currentBusRosterRight}」へ` : `左へドラッグで「${store.state.currentBusRosterLeft}」へ`)}</div>`; mount.appendChild(row); if(isPast || locked) return; let dragging=false, ghost=null, startX=0, startY=0; const onStart=e=>{ const t=e.touches? e.touches[0]:e; startX=t.clientX; startY=t.clientY; dragging=true; ghost=row.cloneNode(true); ghost.classList.add('drag-ghost'); ghost.style.background='#fff'; ghost.style.padding='12px'; ghost.style.borderRadius='12px'; ghost.style.left=startX+'px'; ghost.style.top=startY+'px'; document.body.appendChild(ghost); row.style.visibility='hidden'; leftList.classList.remove('drop-target'); rightList.classList.remove('drop-target'); }; const onMove=e=>{ if(!dragging) return; const t=e.touches? e.touches[0]:e; const x=t.clientX; const y=t.clientY; ghost.style.left=x+'px'; ghost.style.top=y+'px'; const L=leftList.getBoundingClientRect(); const R=rightList.getBoundingClientRect(); const overLeft = x>=L.left && x<=L.right && y>=L.top && y<=L.bottom; const overRight = x>=R.left && x<=R.right && y>=R.top && y<=R.bottom; leftList.classList.toggle('drop-target', overLeft); rightList.classList.toggle('drop-target', overRight); }; const onEnd=e=>{ if(!dragging) return; dragging=false; const t=e.changedTouches? e.changedTouches[0]:e; const x=t.clientX; const y=t.clientY; const L=leftList.getBoundingClientRect(); const R=rightList.getBoundingClientRect(); const overLeft = x>=L.left && x<=L.right && y>=L.top && y<=L.bottom; const overRight = x>=R.left && x<=R.right && y>=R.top && y<=R.bottom; if(side==='right' && overLeft){ store.moveKid(k.id, store.state.currentBusRosterLeft); } else if(side==='left' && overRight){ store.moveKid(k.id, store.state.currentBusRosterRight); } else { row.style.visibility='visible'; } leftList.classList.remove('drop-target'); rightList.classList.remove('drop-target'); if(ghost){ ghost.remove(); } renderRoster(); renderBoard(); }; row.addEventListener('touchstart', onStart, {passive:true}); row.addEventListener('touchmove', onMove, {passive:false}); row.addEventListener('touchend', onEnd); row.addEventListener('mousedown', onStart); row.addEventListener('mousemove', onMove); row.addEventListener('mouseup', onEnd); }); };
+        build(store.state.currentBusRosterLeft, leftList, leftCount, 'left'); build(store.state.currentBusRosterRight, rightList, rightCount, 'right');
+      }
+      renderRoster._initialized = false;
+
+      function syncDates(){ $('#loc-date').value = store.state.currentDate; $('#board-date').value = store.state.currentDate; $('#roster-date').value = store.state.currentDate; }
+      function renderAll(){ renderLocation(); renderBoard(); renderRoster(); }
+
+      // 初期描画
+      setTab('location'); syncDates(); renderAll();
+ // 欠席確認：日付初期値を当日に（未設定時のみ）
+ (function(){const d=document.getElementById('absence-date'); if(d && !d.value){d.value=new Date().toISOString().slice(0,10);} })();
+    </script>
+  
+    <script>
+    // =====================================================
+    // 挙動補助スクリプト（機能は既存のまま／軽量・非干渉）
+    // - 初期化時にUI不要要素を除去（お知らせ、徒歩組）
+    // - 既存のクリック処理やデータ切替には触れません
+    // =====================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // DOMContentLoaded：HTML構造読み込み直後。不要UI除去のみ実施
+      // (1) 乗降車確認：お知らせボタンはUI方針上不要のため削除
+      const noticeEl = document.getElementById('board-notice'); // 乗降車確認の『お知らせ』ボタン要素
+      if (noticeEl) noticeEl.remove(); // UI簡素化：実装はあるが運用上は削除（無理に動かすのではなく非表示運用）
+      // (2) 乗降車確認：バス選択セグメント
+      const busSeg = document.getElementById('board-bus-seg'); // バス選択セグメント（A/B/2A/徒歩組）
+      //   徒歩組（必要なし）をボタンリストから確実に取り除く関数
+      // 徒歩組の除去：表示要件に合わせて非表示
+      const removeToho = () => {
+        if (!busSeg) return; // セグメント未構築なら何もしない（安全ガード）
+        busSeg.querySelectorAll('button').forEach(b => { // 子ボタンを走査
+          const t = (b.textContent || '').trim(); // ラベル文字列（空白除去）
+          // 文言が『徒歩組』または『徒歩』を含む場合は非表示
+          if (t.includes('徒歩組') || t.includes('徒歩')) b.remove(); // 『徒歩組』は運用上、選択肢から除外
+        });
+      };
+      // 初期化直後に一度だけ削除
+      removeToho(); // 初期化直後に一度だけ実行
+      if (busSeg) {
+        // セグメント内の子要素が変化した場合にも再度削除（軽量監視）
+        const mo = new MutationObserver(() => removeToho()); // 子要素の変化に合わせて再度除去
+        mo.observe(busSeg, { childList:true, subtree:true }); // 監視：子追加/削除を対象。他領域には非干渉 // 監視対象：子要素の追加・削除
+      }
+    });
+    </script>
+
+  </body>
+</html>

@@ -49,7 +49,7 @@ const handleLogin = async (accountId: string, password: string): Promise<void> =
       // 端末固有IDを生成
       getMobileIdForInitialize();
 
-      router.replace('tabs/TabLocate')
+      router.replace('(tabs)')
     } else {
       console.log('アカウントIDまたはパスワードが違います')
     }
@@ -71,7 +71,7 @@ const Login = (): JSX.Element => {
         if (sessionData) {
           const session = JSON.parse(sessionData);
           console.log('セッション復元:', session);
-          router.replace('tabs/TabLocate');
+          router.replace('(tabs)');
         }
 
       } finally {

@@ -1,11 +1,27 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
+import Logout from '../../components/Logout';
+import CacheClear from '../../components/CacheClear';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerStyle: {
+          backgroundColor: '#467FD3',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontSize: 22,
+          fontWeight: 'bold',
+        },
+        headerRight: () => (
+          <View style={styles.headerRight}>
+            <CacheClear />
+            <Logout />
+          </View>
+        ),
         headerShown: true,
         tabBarStyle: Platform.select({
           ios: {
@@ -38,3 +54,12 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 15,
+    gap: 15,
+  },
+});
